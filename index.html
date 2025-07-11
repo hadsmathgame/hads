@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>بازی ریاضی</title>
+<style>
+    body {
+        font-family: Tahoma, sans-serif;
+        text-align: center;
+        background: white;
+        direction: rtl;
+        padding: 20px;
+    }
+    h1 { color: #004d40; }
+    .btn {
+        padding: 10px 20px;
+        margin: 10px;
+        font-size: 16px;
+        background: #00796b;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+    }
+    .btn:hover { background: #004d40; }
+
+    #show-explanation-btn {
+        background: #2196f3;
+        font-size: 15px;
+    }
+
+    #next-btn {
+        background: #ff9800;
+        font-size: 15px;
+    }
+
+    .question-box {
+        background: white;
+        padding: 20px;
+        margin: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+    #explanation {
+        background: #e0f2f1;
+        margin-top: 15px;
+        padding: 10px;
+        border-radius: 5px;
+        display: none;
+    }
+</style>
+</head>
+<body>
+
+<h1>🎉 به بازی ریاضی ما خوش آمدید 🎉</h1>
+<p>در این بازی، هر بازیکن سطح سوال را انتخاب می‌کند و در زمان مشخص پاسخ می‌دهد.</p>
+<p style="color:red;"><strong>توجه: عدم پاسخ صحیح یا اتمام زمان، یک امتیاز منفی خواهد داشت.</strong></p>
+
+<button class="btn" onclick="showLevelOptions()">شروع بازی</button>
+
+<div id="level-selection" style="display:none;">
+    <h2>سطح سوال را انتخاب کنید:</h2>
+    <button class="btn" onclick="startGame(1)">سوال ۱ امتیازی</button>
+    <button class="btn" onclick="startGame(2)">سوال ۲ امتیازی</button>
+    <button class="btn" onclick="startGame(3)">سوال ۳ امتیازی</button>
+</div>
+
+<div id="question-container" style="display:none;" class="question-box">
+    <h2 id="question-text">سوال</h2>
+    <div id="options"></div>
+    <p id="timer"></p>
+    <div id="explanation"></div>
+    <button class="btn" id="show-explanation-btn" style="display:none;" onclick="showExplanation()">نمایش پاسخ تشریحی</button>
+    <button class="btn" id="next-btn" style="display:none;" onclick="nextPlayer()">بازیکن بعدی</button>
+</div>
+
+<script>
+const questions = {
+    1: [
+        { 
+            q: "کدام یک از پاسخ‌های زیر نشان می‌دهد که چطور می‌توان عدد ۳۶ را به حاصل ضرب عامل‌های اول نوشت؟ (تیمز)",
+            options: ["۶×۶", "۴×۹", "۴×۳×۳", "۲×۲×۳×۳"],
+            answer: "۲×۲×۳×۳",
+            explanation: "با تجزیه عدد ۳۶ می‌توان به پاسخ رسید."
+        },
+        {
+            q: "در تجزیه‌ی عدد ۴۸ به عامل‌های اول، توان عدد اول ۲ چند است؟",
+            options: ["۳", "۴", "۵", "۶"],
+            answer: "۴",
+            explanation: "۳×۲×۲×۲×۲=۴۸"
+        },
+        {
+            q: "نسبت محیط مربع به طول ضلع آن چقدر است؟ (تیمز)",
+            options: ["۱", "۲", "۳", "۴"],
+            answer: "۴",
+            explanation: "اگر اندازه ضلع مربع a باشد، محیط آن ۴a است."
+        },
+        {
+            q: "کدام گزینه با عبارت (۳+x)۴ برابر است؟ (تیمز)",
+            options: ["۱۲+x", "۷+x", "۱۲+۴x", "۱۲x"],
+            answer: "۱۲+۴x",
+            explanation: "باید عدد ۴ را در پرانتز ضرب کنیم."
+        },
+        {
+            q: "در یک کیسه‌ی کارت، یک ششم کارت‌ها سبز، یک دوازدهم زرد، یک دوم سفید و یک چهارم کارت‌ها آبی است. اگر کسی بدون نگاه کردن کارتی را انتخاب کند، به احتمال زیاد این کارت چه رنگی است؟ (تیمز)",
+            options: ["آبی", "سفید", "سبز", "زرد"],
+            answer: "سفید",
+            explanation: "عدد احتمال مربوط به رنگ سفید، از بقیه بیشتر است."
+        },
+        {
+            q: "پاسخ معادله‌ی ۱۲=۴-۲x کدام است؟",
+            options: ["۸", "۴", "۶", "۲"],
+            answer: "۸",
+            explanation: "۲x=۱۲+۴ → ۲x=۱۶ → x=۸"
+        },
+        {
+            q: "حاصل جمع ب‌م‌م ۲ و ۳، و ک‌م‌م ۹ و ۱۰ کدام است؟",
+            options: ["۹۰", "۹۱", "۹۶", "۷"],
+            answer: "۹۱",
+            explanation: "ب‌م‌م ۲ و ۳ برابر ۱ و ک‌م‌م ۹ و ۱۰ برابر ۹۰ می‌باشد، مجموع آن‌ها برابر ۹۱ است."
+        },
+        {
+            q: "مساحت جانبی منشوری به ارتفاع ۳۲ و محیط قاعده‌ی ۱۱ چند است؟",
+            options: ["۳۵۲", "۳۶۲", "۳۷۲", "۳۸۲"],
+            answer: "۳۵۲",
+            explanation: "مساحت جانبی منشور برابر است با حاصل ضرب محیط قاعده و ارتفاع: ۳۵۲=۱۱×۳۲"
+        },
+        {
+            q: "چند عدد اول کوچکتر از ۲۰ وجود دارد؟",
+            options: ["۶", "۷", "۸", "۹"],
+            answer: "۸",
+            explanation: "اعداد اول کوچکتر از ۲۰ عبارتند از: ۲، ۳، ۵، ۷، ۱۱، ۱۳، ۱۷ و ۱۹."
+        }
+    ],
+    2: [
+        {
+            q: "محیط یک مربع ۳۶ سانتی‌متر است. مساحت آن چقدر است؟ (تیمز)",
+            options: ["۸۱", "۳۶", "۲۴", "۱۸"],
+            answer: "۸۱",
+            explanation: "اندازه ضلع این مربع برابر است با ۹=۴÷۳۶ مساحت آن برابر است با: ۸۱=۹×۹"
+        },
+        {
+            q: "۱۰ تیله در یک کیسه وجود دارد، ۵ آبی و ۵ قرمز. سوسن یک تیله را بطور تصادفی از کیسه خارج می‌کند، رنگ تیله قرمز است. سپس تیله را به داخل کیسه برمی‌گرداند. احتمال آنکه تیله بعدی که او بطور تصادفی از کیسه خارج می‌کند قرمز باشد، چقدر است؟ (تیمز)",
+            options: ["۰.۵", "۰.۴", "۰.۲", "۰.۱"],
+            answer: "۰.۵",
+            explanation: "نصف مهره‌ها قرمز هستند."
+        },
+        {
+            q: "کیمیا تخم‌مرغ‌ها را در بسته‌هایی قرار می‌دهد. در هر بسته ۶ تخم‌مرغ جای می‌گیرد. او ۹۴ تخم‌مرغ دارد. کمترین تعداد جعبه‌ای که او نیاز دارد تا تخم‌مرغ‌ها را در بسته قرار دهد، چندتاست؟ (تیمز)",
+            options: ["۱۴", "۱۵", "۱۶", "۱۷"],
+            answer: "۱۶",
+            explanation: "با تقسیم ۹۴ بر ۶ مشخص می‌شود ۱۵ بسته‌ی ۶ تایی و ۱ بسته‌ی ۴ تایی خواهیم داشت. پس ۱۶ بسته لازم است."
+        },
+        {
+            q: "اگر t عددی بین ۶ و ۹ باشد، آنگاه ۵+t بین کدام دو عدد زیر است؟ (تیمز)",
+            options: ["۱ و ۴", "۱۰ و ۱۳", "۱۱ و ۱۴", "۳۰ و ۴۵"],
+            answer: "۱۱ و ۱۴",
+            explanation: "چون t بین ۶ و ۹ است، پس ۵+t بین ۶+۵ و ۹+۵ است."
+        },
+        {
+            q: "علی می‌خواست سه عدد صحیح متوالی پیدا کند که مجموع آن‌ها ۸۱ شود. او معادله زیر را نوشت: (n-۱)+n+(n+۱)=۸۱ نماد n مخفف چیست؟ (تیمز)",
+            options: ["کوچکترین عدد", "عدد صحیح وسط", "بزرگترین عدد", "تفا‌وت بین بزرگترین و کوچکترین عدد"],
+            answer: "عدد صحیح وسط",
+            explanation: "کوچکترین عدد ۱-n، n عدد وسط و ۱+n بزرگترین عدد است."
+        },
+        {
+            q: "چند عدد طبیعی کوچکتر از ۱۶۰ وجود دارد که جذر کامل دارند؟",
+            options: ["۱۱", "۱۲", "۱۳", "۱۴"],
+            answer: "۱۲",
+            explanation: "اعداد ۱، ۴، ۹، ۱۶، ۲۵، ۳۶، ۴۹، ۶۴، ۸۱، ۱۰۰، ۱۲۱ و ۱۴۴ جذر کامل دارند."
+        }
+    ],
+    3: [
+        {
+            q: "طول یک قطعه چوب، ۴۰ سانتی‌متر بود. این چوب به ۳ قطعه بریده شد. طول قطعات بر حسب سانتیمتر برابرند با: x+۶ و x+۷ و ۲x-۵ طول بلندترین قطعه کدام است؟ (تیمز)",
+            options: ["۸", "۱۴", "۱۵", "۱۶"],
+            answer: "۱۵",
+            explanation: "۴x + ۸ = ۴۰ → x = ۸ → طول قطعات: ۱۴، ۱۵ و ۱۱ سانتی‌متر"
+        },
+        {
+            q: "مجموع سه عدد زوج متوالی ۱۰۲ می‌باشد. کوچکترین عدد بین این سه عدد کدام است؟",
+            options: ["۳۲", "۳۴", "۳۶", "۳۸"],
+            answer: "۳۲",
+            explanation: "x + (x + ۲) + (x + ۴) = ۱۰۲ → ۳x + ۶ = ۱۰۲ → x = ۳۲"
+        },
+        {
+            q: "۶ نفر جسمی را با نیروهای برابر در جهت‌های شمال، شرق، جنوب، غرب، جنوب شرق و شمال غرب می‌کشند. اگر شخصی که نیرو به سمت شمال وارد می‌کرد، دیگر به جسم نیرو وارد نکند، جسم به کدام سمت حرکت خواهد کرد؟",
+            options: ["شمال", "جنوب", "شرق", "جنوب شرق"],
+            answer: "جنوب",
+            explanation: "در ابتدا نیروها قرینه هستند، با حذف نیروی شمال، جسم به سمت جنوب حرکت می‌کند."
+        },
+        {
+            q: "مجموع سومین مضرب ۱۲، دهمین مضرب ۴۶ و هفتمین مضرب ۴۱ کدام است؟",
+            options: ["۷۸۳", "۷۷۳", "۷۶۳", "۷۵۳"],
+            answer: "۷۸۳",
+            explanation: "سومین مضرب ۱۲ برابر ۳۶، دهمین مضرب ۴۶ برابر ۴۶۰ و هفتمین مضرب ۴۱ برابر ۲۸۷ است."
+        }
+    ]
+};
+const shownQuestions = { 1: [], 2: [], 3: [] };
+let timerInterval;
+let currentExplanation = "";
+
+function showLevelOptions() {
+    document.getElementById('level-selection').style.display = 'block';
+    document.getElementById('question-container').style.display = 'none';
+    document.getElementById('explanation').style.display = 'none';
+}
+
+function startGame(level) {
+    if (shownQuestions[level].length === questions[level].length) {
+        alert("⚠️ سوالات این سطح تمام شده است.");
+        return;
+    }
+
+    document.getElementById('level-selection').style.display = 'none';
+    let availableQuestions = questions[level].filter((_, index) => !shownQuestions[level].includes(index));
+    let randomIndex = Math.floor(Math.random() * availableQuestions.length);
+    let selectedQuestion = availableQuestions[randomIndex];
+    let realIndex = questions[level].indexOf(selectedQuestion);
+    shownQuestions[level].push(realIndex);
+
+    document.getElementById('question-text').innerText = selectedQuestion.q;
+
+    const optionsDiv = document.getElementById('options');
+    optionsDiv.innerHTML = '';
+    selectedQuestion.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.innerText = opt;
+        btn.className = 'btn';
+        btn.onclick = () => checkAnswer(opt, selectedQuestion.answer, selectedQuestion.explanation);
+        optionsDiv.appendChild(btn);
+    });
+
+    document.getElementById('question-container').style.display = 'block';
+    document.getElementById('next-btn').style.display = 'none';
+    document.getElementById('show-explanation-btn').style.display = 'none';
+    document.getElementById('explanation').style.display = 'none';
+
+    let time = level === 1 ? 15 : level === 2 ? 25 : 35;
+    document.getElementById('timer').innerText = `زمان باقی‌مانده: ${time} ثانیه`;
+
+    clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        time--;
+        document.getElementById('timer').innerText = `زمان باقی‌مانده: ${time} ثانیه`;
+        if (time === 0) {
+            clearInterval(timerInterval);
+            alert("⛔ زمان تمام شد! یک امتیاز منفی.");
+            document.getElementById('show-explanation-btn').style.display = 'inline-block';
+            document.getElementById('next-btn').style.display = 'inline-block';
+            currentExplanation = selectedQuestion.explanation;
+        }
+    }, 1000);
+}
+
+function checkAnswer(selected, correct, explanation) {
+    clearInterval(timerInterval);
+    if (selected === correct) {
+        alert("✅ پاسخ درست است!");
+    } else {
+        alert(`❌ پاسخ نادرست است. پاسخ صحیح: ${correct}`);
+    }
+    currentExplanation = explanation;
+    document.getElementById('show-explanation-btn').style.display = 'inline-block';
+    document.getElementById('next-btn').style.display = 'inline-block';
+}
+
+function showExplanation() {
+    document.getElementById('explanation').style.display = 'block';
+    document.getElementById('explanation').innerText = currentExplanation;
+}
+
+function nextPlayer() {
+    showLevelOptions();
+}
+</script>
+
+</body>
+</html>
